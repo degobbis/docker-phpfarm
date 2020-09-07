@@ -1,0 +1,60 @@
+version: '3'
+services:
+
+  mysql:
+    image: mariadb:10.5
+    container_name: mysql
+    restart: always
+    volumes:
+      # MySQL data files go in ../data/mysql
+      - ${MYSQL_DATA_DIR:-./data/mysql}:/var/lib/mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWD:-root}
+    ports:
+      - "3306:3306"
+
+  mailhog:
+    image: mailhog/mailhog:latest
+    container_name: mailhog
+    restart: always
+    ports:
+      - "8025:8025"
+      - "1025:1025"
+
+  webserver:
+    build: phpfarm
+    container_name: webserver
+    restart: always
+    ports:
+      # Expose PHP/Apache ports.
+      - "8053:8053"
+      - "8056:8056"
+      - "8073:8073"
+      - "8074:8074"
+      - "80:${MAP_POT_80:-8074}"
+    working_dir: "/var/www"
+    volumes:
+      # PHP code files go in ../data/php
+      - ${PHP_BASE_DIR:-./data/www}:/var/www
+      - ${LOG_DIR:-./data/logs}:/var/log/apache2
+      - ./phpfarm/apache/apache2.conf:/etc/apache2/apache2.conf
+      - ./phpfarm/apache/conf.d:/etc/apache2/conf.d
+      - ./phpfarm/apache/sites-available:/etc/apache2/sites-available
+    links:
+      - mysql
+      - mailhog
+      - phpmyadmin
+#    environment:
+#      - FORWARD_PORTS_TO_LOCALHOST=3306:mysql:3306
+
+  phpmyadmin:
+    image: phpmyadmin/phpmyadmin
+    container_name: phpmyadmin
+    links:
+      - mysql
+    environment:
+      PMA_HOST: mysql
+      PMA_PORT: 3306
+      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWD:-root}
+    ports:
+      - '8080:80'

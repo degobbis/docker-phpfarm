@@ -1,0 +1,12 @@
+# App data.
+/data/mysql/*
+/data/www/*
+
+# Docker config files.
+/.env
+
+# Exclutions.
+!/data/www/index.php
+!/data/www/.php
+!/data/**/.gitkeep
+
