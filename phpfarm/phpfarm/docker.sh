@@ -22,7 +22,7 @@ do
     # download the bzip
     ./phpdl.sh $VERSION /phpfarm/src/bzips
 
-    V=$(echo $VERSION | awk -F. '{print $1"."$2}')
+    V=$(echo $VERSION | awk -F. '{print $1$2}')
 
     # compile the PHP version
     ./compile.sh $VERSION
@@ -33,9 +33,9 @@ do
     ln -s "/phpfarm/inst/bin/php-config-$VERSION" "/phpfarm/inst/bin/php$V-config"
 
     # compile xdebug
-    if [ "$V" == "5.3" ]; then
+    if [ "$V" == "53" ]; then
         XDBGVERSION="XDEBUG_2_2_7" # old release for old PHP versions
-    elif [ "$V" == "5.6" ]; then
+    elif [ "$V" == "56" ]; then
         XDBGVERSION="XDEBUG_2_5_5" # 2.5.X release for PHP 5.5 and 5.6
     elif [[ $VERSION == *"RC"* ]]; then
         XDBGVERSION="master"       # master for RCs
