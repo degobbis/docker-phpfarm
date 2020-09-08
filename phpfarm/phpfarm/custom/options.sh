@@ -20,6 +20,7 @@ configoptions="$configoptions \
     --with-imap \
     --with-imap-ssl \
     --with-gd \
+    --enable-gd \
     --with-jpeg-dir=/usr/lib \
     --with-kerberos \
     --with-libdir=$LIBPATH \
