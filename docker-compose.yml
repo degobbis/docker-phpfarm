@@ -58,3 +58,5 @@ services:
       MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWD:-root}
     ports:
       - '8000:80'
+    volumes:
+      - ${PHP_BASE_DIR:-./data/www}/.php/99-php-overrides.ini:/usr/local/etc/php/conf.d/99-mysql.ini
