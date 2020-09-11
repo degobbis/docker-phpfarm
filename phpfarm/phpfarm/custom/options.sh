@@ -8,33 +8,21 @@ else
     ln -s /usr/lib/libc-client.a /usr/lib/x86_64-linux-gnu/libc-client.a
 fi
 
-
 configoptions="$configoptions \
-    --enable-gd-native-ttf \
-    --enable-intl \
-    --with-ldap \
-    --with-ldap-sasl \
-    --with-bz2 \
     --with-config-file-scan-dir=/var/www/.php \
+    --with-bz2 \
     --with-curl \
-    --with-imap \
-    --with-imap-ssl \
-    --with-gd \
-    --enable-gd \
-    --with-jpeg-dir=/usr/lib \
-    --with-kerberos \
-    --with-libdir=$LIBPATH \
-    --with-mcrypt \
+    --enable-intl \
+    --with-ldap --with-libdir=$LIBPATH \
     --with-mhash \
-    --with-mysql=/usr \
+    --enable-mysqlnd
     --with-mysqli=/usr/bin/mysql_config \
-    --with-openssl \
     --with-pdo-mysql \
     --with-pdo-pgsql \
-    --with-png-dir=/usr/lib \
     --with-pgsql \
+    --with-pspell \
     --with-xsl=/usr \
-    --with-freetype-dir=/usr/include/freetype2/ \
+    --with-zlib \
 "
 
 echo "--- loaded custom/options.sh ----------"

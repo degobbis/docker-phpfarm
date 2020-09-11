@@ -9,58 +9,108 @@ FROM philcryer/min-jessie:latest
 # https://github.com/moby/moby/issues/4032#issuecomment-192327844
 ARG DEBIAN_FRONTEND=noninteractive
 
-WORKDIR "/root"
+WORKDIR /
 
 LABEL author="Andreas Gohr <andi@splitbrain.org>, Eugene Sia <eugene@eugenesia.co.uk>"
+
+###
+### Upgrade (install ps)
+###
+RUN set -eux \
+	&& rm -f /etc/apt/sources.list \
+	&& { \
+		echo "deb http://ftp.debian.org/debian jessie main"; \
+		echo "#deb http://ftp.debian.org/debian jessie-updates main"; \
+		echo "deb http://security.debian.org/debian-security jessie/updates main"; \
+	} | tee /etc/apt/sources.list
+RUN set -eux \
+	&& DEBIAN_FRONTEND=noninteractive apt-get update -qq
 
 ENV \
   # Packages needed for running various build scripts.
   SCRIPT_PKGS=" \
     debian-keyring \
-    wget \
   " \
   # Packages only needed for PHP build.
   BUILD_PKGS=" \
-    apt-utils \
     autoconf \
+    autoconf2.13 \
     build-essential \
     lemon \
-    bison \
+    m4 \
     pkg-config \
     re2c \
+    xz-utils \
+    libpcre3-dev \
+    libmysqlclient-dev \
+    libtool-bin \
+    libonig-dev \
+    # Fore bz2
+    libbz2-dev \
+    # For cUrl
+    libcurl4-openssl-dev \
+    # For GD
+    libfreetype6-dev libjpeg62-turbo-dev libpng-dev libxpm-dev libvpx-dev libwebp-dev \
+    # For imagick
+    libmagickwand-dev \
+    # For imap
+    libc-client2007e-dev \
+    libkrb5-dev \
+    libc-client-dev \
+    # For intl
+    libicu-dev \
+    # For ldap
+    libldap2-dev \
+    # For mcrypt
+    libmcrypt-dev \
+    # For mhash
+    libmhash-dev \
+    # For pgsql / pdo_pgsql
+    libpq-dev \
+    libsqlite3-dev \
+    # For pspell
+    libpspell-dev \
+    # For tidy
+    libtidy-dev \
+    # For xsl
+    libxslt-dev \
+    # For zip
+    cmake gnutls-dev libssl([0-9]+(\.[0-9]+)*)?-dev$ libzip-dev libbz2-dev zlib1g-dev \
   " \
   # PHP runtime dependencies.
   RUNTIME_PKGS=" \
+    apt-utils \
     # Needed for PHP and Git to connect with SSL sites.
     ca-certificates \
+    wget \
     curl \
     git \
+    openssl \
+    libpcre3 \
+    libmysqlclient18 \
+    libonig2 \
     # apt-get complains that this is an 'essential' package.
     debian-archive-keyring \
-    imagemagick \
-    libbz2-dev \
-    libc-client2007e-dev \
-    libcurl4-openssl-dev \
-    libfreetype6-dev \
-    libicu-dev \
-    libjpeg-dev \
-    libkrb5-dev \
-    libldap2-dev \
-    libltdl-dev \
-    libmcrypt-dev \
-    libmhash-dev \
-    libmysqlclient-dev \
-    libonig-dev \
-    libpng-dev \
-    libpq-dev \
-    libsasl2-dev \
-    libsqlite3-dev \
-    libssl-dev \
-    libwebp-dev \
-    libxml2-dev \
-    libxpm-dev \
-    libxslt1-dev \
-    libzip-dev \
+    # For GD
+    libfreetype6 libjpeg62-turbo libpng[0-9]+-[0-9]+$ libxpm4 libvpx[0-9]+$ libwebp[0-9]+$ \
+    # For imagick
+    libmagickwand-6.q16-[0-9]+$ \
+    # For imap
+    libc-client2007e \
+    # For intl
+    libicu[0-9]+$ \
+    # For mcrypt
+    libmcrypt4 \
+    # For pgsql / pdo_pgsql
+    libpq5 \
+    # For pspell
+    libaspell15 \
+    # For tidy
+    libtidy5* \
+    # For xsl
+    libxslt1.1 \
+    # For zip
+    libzip[0-9]$ \
   " \
   # Packages needed to run Apache httpd.
   APACHE_PKGS="\
@@ -71,24 +121,22 @@ ENV \
   "
 
 # Install packages we need for runtime usage.
-RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-    $RUNTIME_PKGS \
-    $APACHE_PKGS \
+RUN set -eux \
+    && DEBIAN_FRONTEND=noninteractive apt-get update \
+    && DEBIAN_FRONTEND=noninteractive apt-get install -y --no-install-recommends --no-install-suggests \
     # Install packages needed for build.
+    $RUNTIME_PKGS \
     $SCRIPT_PKGS \
-    $BUILD_PKGS && \
-    apt-get upgrade -y
+    $BUILD_PKGS \
+    $APACHE_PKGS
+#    && DEBIAN_FRONTEND=noninteractive apt-get upgrade -qq -y --no-install-recommends --no-install-suggests
 
-# Configure sendmail to use mailhog
-RUN curl -Lsf 'https://storage.googleapis.com/golang/go1.8.3.linux-amd64.tar.gz' | tar -C '/usr/local' -xvzf -
-ENV PATH /usr/local/go/bin:$PATH
-RUN go get github.com/mailhog/mhsendmail \
-    && mv /root/go/bin/mhsendmail /usr/bin/mhsendmail \
-    && echo '#!/usr/bin/env bash' > /usr/sbin/sendmail \
-    && echo "/usr/bin/mhsendmail --smtp-addr mailhog:1025" >> /usr/sbin/sendmail \
-    && chmod 755 /usr/sbin/sendmail \
-    && rm -rf /root/go
+
+# -------------------- mhsendmail for sendmail --------------------
+COPY mhsendmail /usr/local/bin/mhsendmail
+RUN echo '#!/usr/bin/env bash' > /usr/sbin/sendmail \
+    && echo "/usr/local/bin/mhsendmail --smtp-addr mailhog:1025" >> /usr/sbin/sendmail \
+    && chmod 755 /usr/sbin/sendmail
 
 
 # Reconfigure Apache
@@ -109,30 +157,43 @@ ENV PHP_FARM_VERSIONS="5.3.29 5.6.40 7.3.22 7.4.10" \
   # Add path to built PHP executables, for module building and for Apache.
   PATH="/phpfarm/inst/bin/:$PATH"
 
+RUN wget -O /tmp/bison-2.6.4.tar.gz http://ftp.gnu.org/gnu/bison/bison-2.6.4.tar.gz \
+  && tar -xf /tmp/bison-2.6.4.tar.gz -C /tmp  \
+  && cd /tmp/bison-2.6.4 \
+  && ./configure --prefix=/usr/local \
+  && make \
+  && make install
+
 
 # Download PhpFarm scripts into /phpfarm/.
-RUN wget -O /phpfarm.tar.gz https://github.com/fpoirotte/phpfarm/archive/develop.tar.gz && \
-  mkdir /phpfarm && \
-  tar -xf /phpfarm.tar.gz -C /phpfarm --strip 1 && \
+RUN wget -O /tmp/phpfarm.tar.gz https://github.com/fpoirotte/phpfarm/archive/develop.tar.gz \
+  && mkdir -p /phpfarm/inst/bin \
+  && tar -xf /tmp/phpfarm.tar.gz -C /phpfarm --strip 1 \
   #
   # Overwrite PhpFarm with our own modifications.
-  rm -rf /phpfarm/src/bzips /phpfarm/src/custom && \
-  mv /phpfarm_mod/* /phpfarm/src/ && \
+  && rm -rf /phpfarm/src/bzips /phpfarm/src/custom \
+#  && find /phpfarm_mod -type f -perm +0111 -exec strip --strip-all '{}' + || true
+  && mv /phpfarm_mod/* /phpfarm/src/ \
   #
   # Wait for docker.sh to finish moving else trying to exec a file being
   # written will output "Text file busy" error.
-  sleep 5s && \
-  rmdir /phpfarm_mod && \
-  #
-  # Build all PHP versions.
-  cd /phpfarm/src && \
-  ./docker.sh && \
+  && sleep 5s \
+  && rm -rf /phpfarm_mod
+
+#
+# Build all PHP versions.
+RUN cd /phpfarm/src \
+  && ./docker.sh \
   #
   # Clean up.
-  apt-get purge -y $SCRIPT_PKGS $BUILD_PKGS && \
-  apt-get autoremove -y && \
-  apt-get clean -y && \
-  rm -rf /var/lib/apt/lists/*
+  && cd / \
+  && rm -rf /phpfarm/src \
+  && DEBIAN_FRONTEND=noninteractive apt-get purge -y $SCRIPT_PKGS $BUILD_PKGS \
+  && DEBIAN_FRONTEND=noninteractive apt-get autoremove -y \
+  && DEBIAN_FRONTEND=noninteractive apt-get clean -y \
+  && rm -rf /var/lib/apt/lists/* \
+  && rm -rf /tmp/* \
+  && (rm -rf /tmp/.* || true)
 
 
 # expose the ports

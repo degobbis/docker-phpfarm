@@ -19,10 +19,10 @@ Run `docker-compose up -d`, then browse to `http://localhost:8056/` as example, 
 
 Port | PHP Version | Binary
 -----|-------------|-------
-8053 | 5.3.29      | php5.3
-8056 | 5.6.40      | php5.6
-8073 | 7.3.22      | php7.3
-8074 | 7.4.10      | php7.4
+8053 | 5.3.29      | php53
+8056 | 5.6.40      | php56
+8073 | 7.3.22      | php73
+8074 | 7.4.10      | php74
 
 The port `80` is basicly mapped to PHP 7.4.10. You can change this in `.env`.
 

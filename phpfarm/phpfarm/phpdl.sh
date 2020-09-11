@@ -41,5 +41,5 @@ fi
 # download
 echo "downloading $URL -> $OUT, extracting to $EXT"
 curl -L --silent --show-error --fail -o "$OUT" "$URL" && \
-tar -xvf "$OUT" -C "$EXT" --strip-components 1
+tar -xf "$OUT" -C "$EXT" --strip-components 1
 exit $?

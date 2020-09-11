@@ -7,7 +7,7 @@ if [ -z "$PHP_FARM_VERSIONS" ]; then
     exit 1
 fi
 
-export $MAKE_OPTIONS="-j$(nproc)"
+export MAKE_OPTIONS="-j$(nproc)"
 
 # fix freetype for older php https://stackoverflow.com/a/26342869
 mkdir /usr/include/freetype2/freetype
@@ -37,16 +37,19 @@ do
         XDBGVERSION="XDEBUG_2_2_7" # old release for old PHP versions
     elif [ "$V" == "56" ]; then
         XDBGVERSION="XDEBUG_2_5_5" # 2.5.X release for PHP 5.5 and 5.6
+    ln -s "/phpfarm/inst/bin/php-fpm-$VERSION" "/phpfarm/inst/bin/php$V-fpm"
     elif [[ $VERSION == *"RC"* ]]; then
         XDBGVERSION="master"       # master for RCs
+    ln -s "/phpfarm/inst/bin/php-fpm-$VERSION" "/phpfarm/inst/bin/php$V-fpm"
     else
         XDBGVERSION="2.9.6" # 2.6.X release for PHP 7.2 - 7.4
+    ln -s "/phpfarm/inst/bin/php-fpm-$VERSION" "/phpfarm/inst/bin/php$V-fpm"
     fi
 
     echo "--- compiling xdebug $XDBGVERSION for php $V ---------------------"
 
     wget https://github.com/xdebug/xdebug/archive/$XDBGVERSION.tar.gz && \
-    tar -xzvf $XDBGVERSION.tar.gz && \
+    tar -xzf $XDBGVERSION.tar.gz && \
     cd xdebug-$XDBGVERSION && \
     phpize$V && \
     ./configure --enable-xdebug --with-php-config=/phpfarm/inst/bin/php$V-config && \
@@ -56,10 +59,10 @@ do
     echo "zend_extension = /phpfarm/inst/php$V/lib/xdebug.so" >> /phpfarm/inst/php$V/etc/php.ini && \
     cd .. && \
     rm -rf xdebug-$XDBGVERSION && \
-    rm -f $XDBGVERSION.tar.gz && \
+    rm -f $XDBGVERSION.tar.gz
 
     # enable apache config - compatible with wheezy and jessie
-    a2ensite php$V.conf
+#    a2ensite php$V.conf
 done
 
 # print what have installed
@@ -71,8 +74,3 @@ a2enmod rewrite
 # remove defaults
 a2dissite 000-default
 echo > /etc/apache2/ports.conf
-
-# clean up sources
-rm -rf /phpfarm/src
-apt-get clean
-rm -rf /var/lib/apt/lists/*

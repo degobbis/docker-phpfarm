@@ -39,7 +39,7 @@ services:
       - ${LOG_DIR:-./data/logs}:/var/log/apache2
       - ./phpfarm/apache/apache2.conf:/etc/apache2/apache2.conf
       - ./phpfarm/apache/conf.d:/etc/apache2/conf.d
-      - ./phpfarm/apache/sites-available:/etc/apache2/sites-available
+      - ./phpfarm/apache/sites-enabled:/etc/apache2/sites-enabled
     links:
       - mysql
       - mailhog
