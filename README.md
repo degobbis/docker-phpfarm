@@ -1,4 +1,4 @@
-Docker LAMPP
+Docker PHPFarm
 ==============
 
 This is an basic setup for a PHP development environment using [Docker and
